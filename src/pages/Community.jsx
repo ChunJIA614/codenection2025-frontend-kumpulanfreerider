@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 const Community = () => {
   const [posts, setPosts] = useState([
@@ -46,17 +46,31 @@ const Community = () => {
     }
   ])
 
+  // Load shared diary posts from localStorage
+  useEffect(() => {
+    const sharedPosts = JSON.parse(localStorage.getItem('communityPosts') || '[]')
+    if (sharedPosts.length > 0) {
+      setPosts(prevPosts => [...sharedPosts, ...prevPosts])
+    }
+  }, [])
+
   const categories = [
     { id: 'all', name: 'All', emoji: '🌟' },
+    { id: 'diary', name: 'Diary', emoji: '📔' },
     { id: 'meditation', name: 'Meditation', emoji: '🧘‍♀️' },
     { id: 'support', name: 'Support', emoji: '💙' },
     { id: 'advice', name: 'Advice', emoji: '💡' },
-    { id: 'success', name: 'Success', emoji: '🎉' }
+    { id: 'achievement', name: 'Achievement', emoji: '�' },
+    { id: 'general', name: 'General', emoji: '💬' }
   ]
 
   const [activeCategory, setActiveCategory] = useState('all')
   const [showPostModal, setShowPostModal] = useState(false)
   const [newPostText, setNewPostText] = useState('')
+  const [selectedPostMood, setSelectedPostMood] = useState('')
+  const [selectedImage, setSelectedImage] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
+  const [selectedCategory, setSelectedCategory] = useState('support')
   
   const handleLike = (postId) => {
     setPosts(posts.map(post => 
@@ -83,13 +97,37 @@ const Community = () => {
         time: 'now',
         likes: 0,
         comments: 0,
-        category: 'support',
-        isLiked: false
+        category: selectedCategory,
+        isLiked: false,
+        mood: selectedPostMood,
+        hasImage: !!selectedImage,
+        image: imagePreview
       }
       setPosts([newPost, ...posts])
       setNewPostText('')
+      setSelectedPostMood('')
+      setSelectedImage(null)
+      setImagePreview(null)
+      setSelectedCategory('support')
       setShowPostModal(false)
     }
+  }
+
+  const handleImageSelect = (event) => {
+    const file = event.target.files[0]
+    if (file) {
+      setSelectedImage(file)
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setImagePreview(e.target.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const removeImage = () => {
+    setSelectedImage(null)
+    setImagePreview(null)
   }
   
   const filteredPosts = activeCategory === 'all' 
@@ -172,8 +210,18 @@ const Community = () => {
                         <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                       </svg>
                     )}
+                    {post.category === 'diary' && (
+                      <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                        📔 Diary
+                      </span>
+                    )}
                   </div>
-                  <span className="text-sm text-gray-500">{post.time}</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-500">{post.time}</span>
+                    {post.mood && (
+                      <span className="text-lg">{post.mood}</span>
+                    )}
+                  </div>
                 </div>
                 <button className="p-2 hover:bg-indigo-100 rounded-2xl transition-all transform hover:scale-105">
                   <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -183,7 +231,24 @@ const Community = () => {
               </div>
 
               {/* Post Content */}
+              {post.mood && (
+                <div className="flex items-center space-x-2 mb-3">
+                  <span className="text-2xl">{post.mood}</span>
+                  <span className="text-sm font-medium text-gray-600">Feeling {post.mood === '😔' ? 'sad' : post.mood === '😤' ? 'angry' : post.mood === '😐' ? 'neutral' : 'happy'}</span>
+                </div>
+              )}
+              
               <p className="text-gray-700 leading-relaxed mb-4">{post.content}</p>
+              
+              {post.hasImage && post.image && (
+                <div className="mb-4">
+                  <img 
+                    src={post.image} 
+                    alt="Post image" 
+                    className="w-full rounded-2xl shadow-lg max-h-64 object-cover"
+                  />
+                </div>
+              )}
 
               {/* Post Actions */}
               <div className="flex items-center justify-between">
@@ -241,17 +306,107 @@ const Community = () => {
       {/* New Post Modal */}
       {showPostModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center px-6 z-50">
-          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 w-full max-w-md shadow-2xl border border-white/20">
+          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 w-full max-w-md shadow-2xl border border-white/20 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-900">Create Post</h3>
               <button 
-                onClick={() => setShowPostModal(false)}
+                onClick={() => {
+                  setShowPostModal(false)
+                  setNewPostText('')
+                  setSelectedPostMood('')
+                  setSelectedImage(null)
+                  setImagePreview(null)
+                  setSelectedCategory('support')
+                }}
                 className="p-2 hover:bg-gray-100 rounded-2xl transition-all transform hover:scale-105"
               >
                 <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
+            </div>
+            
+            {/* Mood Selection */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">How are you feeling?</label>
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  { emoji: '😔', label: 'Sad' },
+                  { emoji: '😤', label: 'Angry' },
+                  { emoji: '😐', label: 'Neutral' },
+                  { emoji: '😊', label: 'Happy' }
+                ].map((mood) => (
+                  <button
+                    key={mood.emoji}
+                    onClick={() => setSelectedPostMood(mood.emoji)}
+                    className={`p-3 rounded-2xl text-center transition-all transform hover:scale-105 ${
+                      selectedPostMood === mood.emoji
+                        ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg scale-105'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <div className="text-2xl mb-1">{mood.emoji}</div>
+                    <div className="text-xs font-medium">{mood.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Category Selection */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">Select Category</label>
+              <div className="grid grid-cols-2 gap-3">
+                {categories.filter(cat => cat.id !== 'all').map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={`p-3 rounded-2xl text-center transition-all transform hover:scale-105 flex items-center space-x-2 ${
+                      selectedCategory === category.id
+                        ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg scale-105'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <div className="text-lg">{category.emoji}</div>
+                    <div className="text-sm font-medium">{category.name}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Image Upload */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">Add Image (optional)</label>
+              {!imagePreview ? (
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:border-indigo-400 transition-colors bg-gray-50/50">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <svg className="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p className="text-sm text-gray-500 font-medium">Click to upload image</p>
+                    <p className="text-xs text-gray-400">PNG, JPG up to 10MB</p>
+                  </div>
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                  />
+                </label>
+              ) : (
+                <div className="relative">
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="w-full h-32 object-cover rounded-2xl shadow-lg"
+                  />
+                  <button
+                    onClick={removeImage}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-lg hover:bg-red-600 transition-colors shadow-lg"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
             </div>
             
             <textarea
@@ -264,7 +419,14 @@ const Community = () => {
             
             <div className="flex justify-end space-x-3">
               <button 
-                onClick={() => setShowPostModal(false)}
+                onClick={() => {
+                  setShowPostModal(false)
+                  setNewPostText('')
+                  setSelectedPostMood('')
+                  setSelectedImage(null)
+                  setImagePreview(null)
+                  setSelectedCategory('support')
+                }}
                 className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-all"
               >
                 Cancel

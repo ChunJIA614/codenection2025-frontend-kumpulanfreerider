@@ -6,6 +6,8 @@ import MoodTracking from './pages/MoodTracking'
 import Diary from './pages/Diary'
 import Meditation from './pages/Meditation'
 import Community from './pages/Community'
+import Profile from './pages/Profile'
+import Counseling from './pages/Counseling'
 
 function App() {
   // Global state management
@@ -283,6 +285,14 @@ function App() {
                 user={user}
               />
             } 
+          />
+          <Route 
+            path="/profile" 
+            element={<Profile />} 
+          />
+          <Route 
+            path="/counseling" 
+            element={<Counseling />} 
           />
         </Routes>
       </Layout>
