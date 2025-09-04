@@ -2,6 +2,10 @@
 
 A beautiful and intuitive emotional health tracking application built with React and Tailwind CSS, designed to help students monitor their mental wellbeing, practice meditation, and connect with a supportive community.
 
+## ❤️‍🔥 Figma Link
+- **Dev Mode**: https://www.figma.com/design/VoXZwtc4rl14Sl7oxFc7JI/Hackathon?node-id=0-1&m=dev&t=m8onS0jHPPX6eJxE-1
+- **Prototype Mode**: https://www.figma.com/proto/VoXZwtc4rl14Sl7oxFc7JI/Hackathon?node-id=0-1&t=m8onS0jHPPX6eJxE-1
+
 ## ✨ Key Features
 
 ### 🏠 Dashboard
